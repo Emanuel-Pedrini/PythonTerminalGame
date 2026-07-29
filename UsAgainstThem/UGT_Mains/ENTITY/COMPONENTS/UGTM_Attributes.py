@@ -96,6 +96,10 @@ class cUGT_AttributesSet:
                     return 0
                 
     def fInt_GetAttributeEfficiency(self, Attribute : cUGT_Attribute) -> int:
-        AttributeCeil = 30
-        AttributeValue = self.fInt_TotalAttribute(Attribute)
-        return int((((AttributeValue * (3.0 - min(2.6, (1.05 * (AttributeValue /  AttributeCeil))))) * 1.68) - 7) * (1 + (self.Level / (self.Level + 30))))
+        AttributeCeil : int = 30
+        AttributeValue : int = self.fInt_TotalAttribute(Attribute)
+        AttributeRatio : float =  (AttributeValue /  AttributeCeil)
+        AttributeScale : float = 3.0 - min(2.6, (1.05 * AttributeRatio))
+        LevelScale : float = 1 + (self.Level / (self.Level + 30))
+                                  
+        return int((((AttributeValue * AttributeScale) * 1.68) - 7) * LevelScale)
