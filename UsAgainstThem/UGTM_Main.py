@@ -1,7 +1,3 @@
-from UGT_Mains.UGTM_HealthClass import cUGT_Health
+from UGT_Mains.ENTITY.UGTM_MainEntityClass import cUGT_MainEntity
 
-f = cUGT_Health(100, 100, 0)
-x = f.fInt_ReduceHealth(30)
-y = f.fInt_IncreaseHealth(10)
-f.fInt_ChangeMaximumHealth(+50)
-print(y, f.iInt_ActualHealth, f.iInt_MaximumHealth)
+x = cUGT_MainEntity("Mariazinha", "Mata-Galinha", "Esganadora-de-Frango", "F")
