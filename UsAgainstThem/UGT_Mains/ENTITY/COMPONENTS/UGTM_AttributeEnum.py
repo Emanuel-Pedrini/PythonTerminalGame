@@ -1,0 +1,39 @@
+from UGT_Utilities.UGTM_GlobalImports import Enum
+
+class cUGT_Attribute(Enum):
+    ANY = -1
+    ALL = 0
+    
+    STRENGTH  = 1
+    DEXTERITY = 2
+    VITALITY = 3
+    INTELLIGENCE = 4
+    CONCENTRATION = 5
+    BEAUTY = 6
+    ENDURANCE = 7
+    
+    MAXIMUM_HEALTH = 8 
+    CRITICAL_MULTIPLIER = 9
+    CRITICAL_CHANCE = 10
+    MAXIMUM_ENERGY = 11
+    ENERGY_REGEN = 12
+    DODGE_CHANCE = 13
+    
+    SHARP_RESISTANCE = 14
+    IMPACT_RESISTANCE = 15
+    ELECTRIC_RESISTANCE = 16
+    HEAT_RESISTANCE = 17
+    COLD_RESISTANCE = 18
+    QUIMIC_RESISTANCE = 19
+    
+    MELEE_DAMAGE = 20
+    RANGED_DAMAGE = 21
+    SPECIAL_DAMAGE = 22
+    
+class cUGT_DamageType(Enum):
+    SHARP_DAMAGE = 14
+    IMPACT_DAMAGE = 15
+    ELECTRIC_DAMAGE = 16
+    HEAT_DAMAGE = 17
+    COLD_DAMAGE = 18
+    QUIMIC_DAMAGE = 19 

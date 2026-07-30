@@ -1,39 +1,6 @@
-from UGT_Utilities.UGTM_GlobalImports import Enum, dataclass
-from UGT_Utilities.UGTM_DurationClass import cUGT_TimeMarker
-
-class cUGT_Attribute(Enum):
-    ANY = -1
-    ALL = 0
-    
-    STRENGTH  = 1
-    DEXTERITY = 2
-    VITALITY = 3
-    INTELLIGENCE = 4
-    CONCENTRATION = 5
-    BEAUTY = 6
-    ENDURANCE = 7
-    
-    MAXIMUM_HEALTH = 8 
-    CRITICAL_MULTIPLIER = 9
-    CRITICAL_CHANCE = 10
-    MAXIMUM_ENERGY = 11
-    ENERGY_REGEN = 12
-    DODGE_CHANCE = 13
-    
-    SHARP_RESISTANCE = 14
-    IMPACT_RESISTANCE = 15
-    ELECTRIC_RESISTANCE = 16
-    HEAT_RESISTANCE = 17
-    COLD_RESISTANCE = 18
-    QUIMIC_RESISTANCE = 19
-    
-# A, M, S
-@dataclass
-class cUGT_AttributeModifier:
-    i_Value : int 
-    i_Attribute : cUGT_Attribute 
-    i_Operation : str 
-    i_Duration : cUGT_TimeMarker 
+from UGT_Mains.ENTITY.COMPONENTS.UGTM_AttributeEnum import cUGT_Attribute
+from UGT_Mains.ENTITY.COMPONENTS.UGTM_AttributeModifier import cUGT_AttributeModifier
+from UGT_Utilities.UGTA_Calculations import GlobalComplexCalculations, AttributeCalculations
         
 class cUGT_AttributesSet:
     def __init__(self, 
@@ -45,61 +12,59 @@ class cUGT_AttributesSet:
                  Concentration : int = 5, 
                  Beauty : int = 5) -> None:
         self.Level = 1
-        self.Attributes : dict[cUGT_Attribute, int] = {
+        self.Modifiers : list[ cUGT_AttributeModifier ] = []
+        self.AttributesSet : dict[cUGT_Attribute, int] = {
             cUGT_Attribute.STRENGTH : Strength,
             cUGT_Attribute.DEXTERITY : Dexterity,
             cUGT_Attribute.VITALITY : Vitality,
             cUGT_Attribute.ENDURANCE : Endurance,
             cUGT_Attribute.INTELLIGENCE : Intelligence,
             cUGT_Attribute.CONCENTRATION : Concentration,
-            cUGT_Attribute.BEAUTY : Beauty
+            cUGT_Attribute.BEAUTY : Beauty,
+            cUGT_Attribute.ALL : 0
         }
         self.Secondary_Attributes : dict = {
-            cUGT_Attribute.MAXIMUM_HEALTH : lambda : 100 + self.fInt_GetAttributeEfficiency(cUGT_Attribute.VITALITY) * 5.72,
-            cUGT_Attribute.MAXIMUM_ENERGY : lambda : 30 + ((self.fInt_GetAttributeEfficiency(cUGT_Attribute.CONCENTRATION) * 0.8) - 20),
-            cUGT_Attribute.ENERGY_REGEN : lambda : 5 + (self.fInt_GetAttributeEfficiency(cUGT_Attribute.INTELLIGENCE) * 0.38),
-            cUGT_Attribute.DODGE_CHANCE : lambda : max(0, -14 + self.fInt_GetAttributeEfficiency(cUGT_Attribute.DEXTERITY) * 0.461)
+            cUGT_Attribute.MAXIMUM_HEALTH :  lambda : AttributeCalculations['MaximumHealth'](self.fInt_GetAttributeEfficiency(cUGT_Attribute.VITALITY)),
+            cUGT_Attribute.MAXIMUM_ENERGY : lambda : AttributeCalculations['MaximumEnergy'](self.fInt_GetAttributeEfficiency(cUGT_Attribute.CONCENTRATION)),
+            cUGT_Attribute.ENERGY_REGEN : lambda : AttributeCalculations['EnergyRegen'](self.fInt_GetAttributeEfficiency(cUGT_Attribute.INTELLIGENCE)),
+            cUGT_Attribute.DODGE_CHANCE : lambda : AttributeCalculations['DodgeChance'](self.fInt_GetAttributeEfficiency(cUGT_Attribute.DEXTERITY))
         }
-        self.i_Modifiers : list[ cUGT_AttributeModifier ] = []
 
     def fInt_TotalAttribute(self, Attribute: cUGT_Attribute):
         Total_Additives, Total_Multiplicatives = self.fTupleInt_GetBonuses(Attribute)
         Base = self.fInt_GetBase(Attribute)
         if Attribute == cUGT_Attribute.CRITICAL_MULTIPLIER:
             return (Base + Total_Additives) * Total_Multiplicatives
-        return int((Base + Total_Additives) * Total_Multiplicatives)
+        elif Attribute == cUGT_Attribute.ALL:
+            return (Base + Total_Additives) * Total_Multiplicatives
+        return int((Base + Total_Additives + self.fInt_TotalAttribute(cUGT_Attribute.ALL)) * Total_Multiplicatives)
         
-    
     def fTupleInt_GetBonuses(self, Attribute : cUGT_Attribute) -> tuple[int, int]:
         v_Attribute_Additive_Modifiers = []
         v_Attribute_Multiplicative_Modifiers = []
-        for Modifier in self.i_Modifiers:
-            if Modifier.i_Attribute == Attribute:
-                match Modifier.i_Operation:
+        for Modifier in self.Modifiers:
+            if Modifier.Attribute == Attribute:
+                match Modifier.Operation:
                     case "A":
-                        v_Attribute_Additive_Modifiers.append(Modifier.i_Value)
+                        v_Attribute_Additive_Modifiers.append(Modifier.Value)
                     case "M":
-                        v_Attribute_Multiplicative_Modifiers.append(Modifier.i_Value)               
+                        v_Attribute_Multiplicative_Modifiers.append(Modifier.Value)               
         Total_Additives = sum(v_Attribute_Additive_Modifiers)
         Total_Multiplicatives = 1 + sum(v_Attribute_Multiplicative_Modifiers)
         return Total_Additives, Total_Multiplicatives
     
     def fInt_GetBase(self, Attribute : cUGT_Attribute) -> int:
         if isinstance(Attribute, cUGT_Attribute):
-                if Attribute in self.Attributes:
-                    return (self.Attributes[Attribute])
+                if Attribute in self.AttributesSet:
+                    return (self.AttributesSet[Attribute])
                 elif Attribute in self.Secondary_Attributes:
                     return self.Secondary_Attributes[Attribute]()
                 elif Attribute == cUGT_Attribute.CRITICAL_MULTIPLIER:
                     return 2
                 else:
                     return 0
-                
+    def AddModifier(self, Modifier : cUGT_AttributeModifier):
+        self.Modifiers.append(Modifier)
+        
     def fInt_GetAttributeEfficiency(self, Attribute : cUGT_Attribute) -> int:
-        AttributeCeil : int = 30
-        AttributeValue : int = self.fInt_TotalAttribute(Attribute)
-        AttributeRatio : float =  (AttributeValue /  AttributeCeil)
-        AttributeScale : float = 3.0 - min(2.6, (1.05 * AttributeRatio))
-        LevelScale : float = 1 + (self.Level / (self.Level + 30))
-                                  
-        return int((((AttributeValue * AttributeScale) * 1.68) - 7) * LevelScale)
+        return GlobalComplexCalculations['AttributeEfficiency'](self.fInt_TotalAttribute(Attribute), self.Level)
